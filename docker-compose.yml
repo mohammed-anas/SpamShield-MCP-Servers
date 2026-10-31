@@ -1,0 +1,44 @@
+name: spam-shield
+
+# One container per MCP server. Postgres and the chat model run outside this project.
+# From inside a container, host.docker.internal reaches a database published on the host.
+
+x-mcp-environment: &mcp-environment
+  SERVER_PORT: "8080"
+  SPRING_R2DBC_URL: r2dbc:postgresql://host.docker.internal:5432/spamshield
+  SPRING_R2DBC_USERNAME: ${SPRING_R2DBC_USERNAME:-postgres}
+  SPRING_R2DBC_PASSWORD: ${SPRING_R2DBC_PASSWORD:-postgres}
+
+x-mcp-healthcheck: &mcp-healthcheck
+  test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/8080'"]
+  interval: 10s
+  timeout: 3s
+  retries: 12
+  start_period: 50s
+
+services:
+  call-records-mcp-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: call-records-mcp-server
+    ports:
+      - "8081:8080"
+    environment: *mcp-environment
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck: *mcp-healthcheck
+    restart: unless-stopped
+
+  call-records-rest-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: call-records-rest-server
+    ports:
+      - "8085:8080"
+    environment: *mcp-environment
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck: *mcp-healthcheck
+    restart: unless-stopped

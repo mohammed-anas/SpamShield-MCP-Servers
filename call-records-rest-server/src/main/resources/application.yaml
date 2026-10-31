@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: call-records-rest-server
+  config:
+    import: classpath:spamshield-shared.yaml
+
+server:
+  port: ${SERVER_PORT:8081}
+
+info:
+  app:
+    role: call-records-rest

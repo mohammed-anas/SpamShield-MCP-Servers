@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: call-records-mcp-server
+  config:
+    import: classpath:spamshield-shared.yaml
+  ai:
+    mcp:
+      server:
+        name: call-records-mcp-server
+        version: 0.0.1
+        type: ASYNC
+        protocol: STREAMABLE
+        instructions: >
+          Queries stored message-content rows from Postgres.
+          This server does not call a model.
+        capabilities:
+          tool: true
+          resource: false
+          prompt: false
+          completion: false
+
+server:
+  port: ${SERVER_PORT:9090}
+
+info:
+  app:
+    role: call-records

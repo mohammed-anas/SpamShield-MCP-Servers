@@ -1,0 +1,32 @@
+# Imported by every MCP server. Postgres runs outside this project.
+spring:
+  r2dbc:
+    url: ${SPRING_R2DBC_URL:r2dbc:postgresql://localhost:5432/spamshield}
+    username: ${SPRING_R2DBC_USERNAME:spamshield}
+    password: ${SPRING_R2DBC_PASSWORD:spamshield}
+    pool:
+      initial-size: 0
+      max-size: 10
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+server:
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+logging:
+  level:
+    org.springframework.ai.mcp: INFO

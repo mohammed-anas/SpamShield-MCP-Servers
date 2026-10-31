@@ -12,8 +12,8 @@ The MCP host and the model run outside this repository. Clients that insert, upd
 ├── docker-compose.yml
 ├── docker/Dockerfile
 ├── spam-shield-common              shared config, CallRecord, and SQL
-├── call-records-mcp-server         MCP, port 8081
-└── call-records-rest-server        HTTP CRUD, port 8085
+├── call-records-mcp-server         MCP, port 9090
+└── call-records-rest-server        HTTP CRUD, port 8081
 ```
 
 `spam-shield-common` is a library. It is not deployed. Its `spamshield-shared.yaml` is imported by each server with `spring.config.import: classpath:spamshield-shared.yaml`.
@@ -59,17 +59,17 @@ Run one server:
 
 | Process | Endpoint |
 | --- | --- |
-| Call records MCP | http://localhost:8081/mcp |
-| Call records REST | http://localhost:8085/api/call-records |
+| Call records MCP | http://localhost:9090/mcp |
+| Call records REST | http://localhost:8081/api/call-records |
 
 ```bash
-curl -s http://localhost:8085/actuator/health
+curl -s http://localhost:8081/actuator/health
 ```
 
 Create a row once Postgres is up and `call_record` exists:
 
 ```bash
-curl -s -X POST http://localhost:8085/api/call-records \
+curl -s -X POST http://localhost:8081/api/call-records \
   -H 'content-type: application/json' \
   -d '{"callerNumber":"+15551212","calleeNumber":"+15557676","direction":"INBOUND","startedAt":"2026-10-31T12:00:00Z","durationSeconds":42}'
 ```
@@ -86,7 +86,7 @@ export SPRING_R2DBC_PASSWORD=spamshield
 
 ## Run in Docker
 
-Postgres must already be reachable at `host.docker.internal:5432`. These commands do not start the database or a model. Inside each container the app listens on 8080. Host ports are 8081 for MCP and 8085 for the REST API.
+Postgres must already be reachable at `host.docker.internal:5432`. These commands do not start the database or a model. Each container listens on the same port as on the host: 9090 for MCP and 8081 for the REST API.
 
 ```bash
 docker compose up --build -d
@@ -114,8 +114,9 @@ Build and run that image without Compose:
 docker build -f docker/Dockerfile --target call-records-mcp-server -t spamshield/call-records-mcp-server .
 docker run --rm -d \
   --name call-records-mcp-server \
-  -p 8081:8080 \
+  -p 9090:9090 \
   --add-host host.docker.internal:host-gateway \
+  -e SERVER_PORT=9090 \
   -e SPRING_R2DBC_URL=r2dbc:postgresql://host.docker.internal:5432/spamshield \
   -e SPRING_R2DBC_USERNAME=spamshield \
   -e SPRING_R2DBC_PASSWORD=spamshield \
@@ -128,7 +129,7 @@ docker run --rm -d \
 docker stop call-records-mcp-server
 ```
 
-The REST image uses the same shape with `--target call-records-rest-server`, image `spamshield/call-records-rest-server`, and `-p 8085:8080`.
+The REST image uses the same shape with `--target call-records-rest-server`, image `spamshield/call-records-rest-server`, `-e SERVER_PORT=8081`, and `-p 8081:8081`.
 
 Username and password default to `spamshield` when those variables are unset. Compose reads `SPRING_R2DBC_USERNAME` and `SPRING_R2DBC_PASSWORD` from the shell or from a `.env` file next to `docker-compose.yml`.
 
